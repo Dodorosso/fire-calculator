@@ -1,0 +1,12 @@
+{
+  "name": "Calcolatore FIRE",
+  "short_name": "FIRE",
+  "description": "Calcolatore per stimare capitale e rendita futura.",
+  "start_url": "./fire.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f7f6",
+  "theme_color": "#2563eb",
+  "lang": "it"
+}

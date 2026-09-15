@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore Early Retirement (FIRE)</title>
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Calcolatore FIRE per stimare capitale e rendita futura.">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent-green: #10b981;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+
+        h2 { margin-top: 0; font-size: 1.25rem; color: var(--primary); }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .label-text {
+            flex: 1;
+        }
+
+        .help-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-btn {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid rgba(37, 99, 235, 0.35);
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 0.8rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
+        }
+
+        .help-btn:hover,
+        .help-btn:focus-visible {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: #fff;
+            outline: none;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.22);
+        }
+
+        .help-btn.small {
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+        }
+
+        .help-tooltip {
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 10px);
+            transform: translateX(-50%) translateY(4px);
+            width: max-content;
+            max-width: 260px;
+            padding: 9px 10px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.96);
+            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            font-size: 0.75rem;
+            line-height: 1.45;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.18s ease;
+            z-index: 10;
+        }
+
+        .help-tooltip::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            transform: translateX(-50%);
+            border-width: 6px 6px 0 6px;
+            border-style: solid;
+            border-color: rgba(15, 23, 42, 0.96) transparent transparent transparent;
+        }
+
+        .help-wrap:hover .help-tooltip,
+        .help-wrap:focus-within .help-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .action-btn:hover,
+        .action-btn:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(15, 23, 42, 0.08);
+            outline: none;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+        }
+
+        .action-btn.secondary {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+            margin-top: 5px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input[type="number"]:focus {
+            border-color: rgba(37, 99, 235, 0.6);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-box.highlight {
+            border-left-color: var(--accent-green);
+            background: #f0fdf4;
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Pannello Input -->
+    <div class="card">
+        <h2>Parametri di Input</h2>
+        
+        <div class="input-group">
+            <div class="label-row">
+                <label class="label-text" for="initial">Capitale Attuale Iniziale (€)</label>
+                <span class="help-wrap">
+                    <button type="button" class="help-btn" aria-label="Spiegazione: Capitale Attuale Iniziale">?</button>
+                    <span class="help-tooltip">Capitale già accumulato al momento iniziale. È il punto di partenza del tuo percorso FIRE.</span>
+                </span>
+            </div>
+            <input type="number" id="initial" value="30000" step="1000" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <label class="label-text" for="monthly">Risparmio Mensile (€)</label>
+                <span class="help-wrap">
+                    <button type="button" class="help-btn" aria-label="Spiegazione: Risparmio Mensile">?</button>
+                    <span class="help-tooltip">Importo che versi ogni mese. Più è alto, più velocemente crescono i tuoi investimenti nel tempo.</span>
+                </span>
+            </div>
+            <input type="number" id="monthly" value="800" step="50" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <label class="label-text" for="rate">Rendimento Reale Annuo (%)</label>
+                <span class="help-wrap">
+                    <button type="button" class="help-btn" aria-label="Spiegazione: Rendimento Reale Annuo">?</button>
+                    <span class="help-tooltip">Rendimento medio atteso dagli investimenti, al netto dell'inflazione. Rappresenta il tasso di crescita reale del capitale.</span>
+                </span>
+            </div>
+            <input type="number" id="rate" value="4.5" step="0.1" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <label class="label-text" for="tax">Aliquota Fiscale Plusvalenze (%)</label>
+                <span class="help-wrap">
+                    <button type="button" class="help-btn" aria-label="Spiegazione: Aliquota Fiscale Plusvalenze">?</button>
+                    <span class="help-tooltip">Percentuale di imposta sulle plusvalenze. Viene considerata per capire il rendimento netto effettivo dopo tasse.</span>
+                </span>
+            </div>
+            <input type="number" id="tax" value="26" step="1" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <label class="label-text" for="years">Orizzonte Temporale (Anni)</label>
+                <span class="help-wrap">
+                    <button type="button" class="help-btn" aria-label="Spiegazione: Orizzonte Temporale">?</button>
+                    <span class="help-tooltip">Numero di anni in cui lasci crescere il capitale. Più lungo è l'orizzonte, più gli effetti del compounding si fanno sentire.</span>
+                </span>
+            </div>
+            <input type="number" id="years" value="20" step="1" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <label class="label-text" for="swr">Safe Withdrawal Rate - SWR (%)</label>
+                <span class="help-wrap">
+                    <button type="button" class="help-btn" aria-label="Spiegazione: Safe Withdrawal Rate">?</button>
+                    <span class="help-tooltip">Percentuale del capitale che si potrebbe prelevare annualmente senza rischiare di esaurire il patrimonio nel tempo. Un valore tipico è 4%.</span>
+                </span>
+            </div>
+            <input type="number" id="swr" value="4.0" step="0.1" oninput="calculate()">
+        </div>
+
+        <div class="actions">
+            <button type="button" class="action-btn primary" id="saveStateBtn">Salva</button>
+            <button type="button" class="action-btn secondary" id="resetStateBtn">Reset</button>
+        </div>
+    </div>
+
+    <!-- Pannello Output & Grafico -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card">
+            <h2>Stima Rendita Netta e Capitale</h2>
+            <div class="results-grid">
+                <div class="stat-box">
+                    <div class="stat-header">
+                        <div class="stat-label">Capitale Finale Reale</div>
+                        <span class="help-wrap">
+                            <button type="button" class="help-btn small" aria-label="Spiegazione: Capitale Finale Reale">?</button>
+                            <span class="help-tooltip">Valore stimato del patrimonio al termine dell'orizzonte scelto, tenendo conto di risparmi e rendimenti.</span>
+                        </span>
+                    </div>
+                    <div class="stat-value" id="res-total">€ 0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-header">
+                        <div class="stat-label">Capitale Versato</div>
+                        <span class="help-wrap">
+                            <button type="button" class="help-btn small" aria-label="Spiegazione: Capitale Versato">?</button>
+                            <span class="help-tooltip">Totale dei soldi che hai effettivamente versato nel tempo, senza includere i guadagni generati dai rendimenti.</span>
+                        </span>
+                    </div>
+                    <div class="stat-value" id="res-contributed">€ 0</div>
+                </div>
+                <div class="stat-box highlight">
+                    <div class="stat-header">
+                        <div class="stat-label">Rendita Perpetua Netta</div>
+                        <span class="help-wrap">
+                            <button type="button" class="help-btn small" aria-label="Spiegazione: Rendita Perpetua Netta">?</button>
+                            <span class="help-tooltip">Rendimento mensile netto che potrebbe generare il capitale se fosse gestito con un approccio perpetuo, mantenendo il capitale iniziale.</span>
+                        </span>
+                    </div>
+                    <div class="stat-value" id="res-perpetual">€ 0 /m</div>
+                </div>
+                <div class="stat-box highlight">
+                    <div class="stat-header">
+                        <div class="stat-label">Rendita SWR 4% Netta</div>
+                        <span class="help-wrap">
+                            <button type="button" class="help-btn small" aria-label="Spiegazione: Rendita SWR 4% Netta">?</button>
+                            <span class="help-tooltip">Prelievo mensile netto stimato applicando il 4% annuo del patrimonio, secondo la regola del Safe Withdrawal Rate, dopo tasse.</span>
+                        </span>
+                    </div>
+                    <div class="stat-value" id="res-swr">€ 0 /m</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Proiezione Accumulo nel Tempo</h2>
+            <div class="chart-container">
+                <canvas id="fireChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let fireChart = null;
+
+    function formatEuro(val) {
+        return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+    }
+
+    const STORAGE_KEY = 'fire-calculator-state-v1';
+
+    function saveInputs() {
+        try {
+            const state = {};
+            document.querySelectorAll('input[type="number"]').forEach((input) => {
+                state[input.id] = input.value;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+            console.warn('Impossibile salvare lo stato del calcolatore:', error);
+        }
+    }
+
+    function restoreInputs() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return false;
+
+            const state = JSON.parse(raw);
+            let restored = false;
+
+            Object.entries(state).forEach(([key, value]) => {
+                const input = document.getElementById(key);
+                if (input && value !== undefined && value !== null && value !== '') {
+                    input.value = value;
+                    restored = true;
+                }
+            });
+
+            return restored;
+        } catch (error) {
+            console.warn('Impossibile recuperare lo stato del calcolatore:', error);
+            return false;
+        }
+    }
+
+    function bindInputPersistence() {
+        document.querySelectorAll('input[type="number"]').forEach((input) => {
+            input.addEventListener('input', () => {
+                calculate();
+            });
+        });
+
+        document.getElementById('saveStateBtn').addEventListener('click', () => {
+            saveInputs();
+            alert('Valori salvati');
+        });
+
+        document.getElementById('resetStateBtn').addEventListener('click', () => {
+            const defaults = {
+                initial: '30000',
+                monthly: '800',
+                rate: '4.5',
+                tax: '26',
+                years: '20',
+                swr: '4.0'
+            };
+
+            Object.entries(defaults).forEach(([key, value]) => {
+                const input = document.getElementById(key);
+                if (input) input.value = value;
+            });
+
+            localStorage.removeItem(STORAGE_KEY);
+            calculate();
+            alert('Valori reimpostati');
+        });
+    }
+
+    function calculate() {
+        const initial = parseFloat(document.getElementById('initial').value) || 0;
+        const monthly = parseFloat(document.getElementById('monthly').value) || 0;
+        const rate = (parseFloat(document.getElementById('rate').value) || 0) / 100;
+        const tax = (parseFloat(document.getElementById('tax').value) || 0) / 100;
+        const years = parseInt(document.getElementById('years').value) || 1;
+        const swr = (parseFloat(document.getElementById('swr').value) || 0) / 100;
+
+        let labels = [];
+        let dataContributed = [];
+        let dataTotal = [];
+
+        let currentTotal = initial;
+        let currentContributed = initial;
+
+        for (let yr = 1; yr <= years; yr++) {
+            let annualSavings = monthly * 12;
+            let interest = (currentTotal + annualSavings) * rate;
+            currentTotal += annualSavings + interest;
+            currentContributed += annualSavings;
+
+            labels.push('Anno ' + yr);
+            dataContributed.push(Math.round(currentContributed));
+            dataTotal.push(Math.round(currentTotal));
+        }
+
+        const gain = currentTotal - currentContributed;
+        const gainRatio = currentTotal > 0 ? (gain / currentTotal) : 0;
+        const effectiveTax = gainRatio * tax;
+
+        // Calcolo rendite nette
+        const perpetualGross = currentTotal * rate;
+        const perpetualNetMonthly = (perpetualGross * (1 - effectiveTax)) / 12;
+
+        const swrGross = currentTotal * swr;
+        const swrNetMonthly = (swrGross * (1 - effectiveTax)) / 12;
+
+        // Aggiornamento DOM
+        document.getElementById('res-total').innerText = formatEuro(currentTotal);
+        document.getElementById('res-contributed').innerText = formatEuro(currentContributed);
+        document.getElementById('res-perpetual').innerText = formatEuro(perpetualNetMonthly) + ' /m';
+        document.getElementById('res-swr').innerText = formatEuro(swrNetMonthly) + ' /m';
+
+        // Render Grafico
+        updateChart(labels, dataContributed, dataTotal);
+    }
+
+    function updateChart(labels, dataContributed, dataTotal) {
+        const ctx = document.getElementById('fireChart').getContext('2d');
+        
+        if (fireChart) {
+            fireChart.destroy();
+        }
+
+        fireChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Capitale Finale Reale (€)',
+                        data: dataTotal,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Capitale Versato (€)',
+                        data: dataContributed,
+                        borderColor: '#94a3b8',
+                        backgroundColor: 'rgba(148, 163, 184, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + formatEuro(context.raw);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) { return '€ ' + (value / 1000) + 'k'; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    bindInputPersistence();
+
+    if (!restoreInputs()) {
+        saveInputs();
+    }
+
+    // Calcolo iniziale al caricamento
+    calculate();
+
+    // Abilita l'apertura in modalità app e il funzionamento offline.
+    if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js');
+        });
+    }
+</script>
+
+</body>
+</html>
