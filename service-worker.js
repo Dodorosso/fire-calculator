@@ -1,10 +1,10 @@
-const CACHE_NAME = 'fire-calculator-v1';
+const CACHE_NAME = 'fire-calculator-v2';
 const APP_SHELL = [
     './',
     './index.html',
     './fire.html',
     './manifest.json',
-    './icon.svg'
+    './icon.png'
 ];
 
 self.addEventListener('install', (event) => {
