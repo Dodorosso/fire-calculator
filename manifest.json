@@ -8,5 +8,13 @@
   "orientation": "portrait",
   "background_color": "#f4f7f6",
   "theme_color": "#2563eb",
-  "lang": "it"
+  "lang": "it",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
