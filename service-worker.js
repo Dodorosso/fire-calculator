@@ -1,6 +1,7 @@
 const CACHE_NAME = 'fire-calculator-v1';
 const APP_SHELL = [
     './',
+    './index.html',
     './fire.html',
     './manifest.json',
     './icon.svg'
